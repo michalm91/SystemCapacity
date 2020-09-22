@@ -17,51 +17,40 @@ import java.util.concurrent.TimeUnit;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
-public class SystemCapacityTest
-{
+public class SystemCapacityTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(SystemCapacityTest.class);
 
-    private static final List<String> LIST_OF_EXAMPLE_NAMES = Arrays.asList("Jan", "Dionizy", "Roman", "Janusz", "Kot");
-
-    private static final int NUMBER_OF_ACTIVE_THREADS = 3;
-
-    private static final int MINIMUM_DELAY_BETWEEN_THREADS_MILLISECONDS = 10;
-    private static final int MAXIMUM_DELAY_BETWEEN_THREADS_MILLISECONDS = 2000;
+    private static final List<String> LIST_OF_EXAMPLE_NAMES = List.of("Jan", "January", "Roman", "Janusz", "Kot");
+    private static final int NUMBER_OF_ACTIVE_THREADS = 10;
+    private static final int DELAY_LEFT_LIMIT_MILLISECONDS = 10;
+    private static final int DELAY_RIGHT_LIMIT_MILLISECONDS = 2000;
 
     @Autowired
-    SystemCapacity config;
-
+    private SystemCapacity config;
 
     @Test
     public void compute_many_request() {
-        ScheduledExecutorService executor = Executors.newScheduledThreadPool(NUMBER_OF_ACTIVE_THREADS);
-
-        for (int iterator = 0; iterator < NUMBER_OF_ACTIVE_THREADS; iterator++)
-        {
-            executor.schedule(getThreadRandomUser(), randomNumber(MINIMUM_DELAY_BETWEEN_THREADS_MILLISECONDS, MAXIMUM_DELAY_BETWEEN_THREADS_MILLISECONDS), TimeUnit.MILLISECONDS);
+        final ScheduledExecutorService executor = Executors.newScheduledThreadPool(NUMBER_OF_ACTIVE_THREADS);
+        for (int iterator = 0; iterator < NUMBER_OF_ACTIVE_THREADS; iterator++) {
+            executor.schedule(getThreadRandomUser(), randomNumber(DELAY_LEFT_LIMIT_MILLISECONDS, DELAY_RIGHT_LIMIT_MILLISECONDS), TimeUnit.MILLISECONDS);
         }
 
         executor.shutdown();
-        try
-        {
+        try {
             executor.awaitTermination(10, TimeUnit.SECONDS);
-        }
-        catch (InterruptedException e)
-        {
+        } catch (final InterruptedException e) {
             e.printStackTrace();
         }
     }
 
-    private int randomNumber(int leftLimit, int rightLimit)
-    {
+    private int randomNumber(final int leftLimit, final int rightLimit) {
         return leftLimit + (int) (new Random().nextFloat() * (rightLimit - leftLimit));
     }
 
-    private Runnable getThreadRandomUser()
-    {
-        String user = LIST_OF_EXAMPLE_NAMES.get(randomNumber(0,4));
+    private Runnable getThreadRandomUser() {
+        final String user = LIST_OF_EXAMPLE_NAMES.get(randomNumber(0, 4));
         LOGGER.info(user + " is trying send a request...");
 
-        return () -> LOGGER.info("Have " + user + " had access?: " + config.isAvailabilityToHandlingRequest(user));
+        return () -> LOGGER.info("Have " + user + " had access?: " + config.work(user));
     }
 }
